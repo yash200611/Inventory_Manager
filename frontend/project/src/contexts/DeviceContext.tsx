@@ -122,16 +122,25 @@ export const DeviceProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const loadData = async () => {
       try {
         setLoading(true);
+        setError(null);
+        console.log('🔄 Loading data from API...');
+        
         const [apiDevices, apiUsers] = await Promise.all([
           apiService.getDevices(),
           apiService.getUsers()
         ]);
         
+        console.log('📱 Devices loaded:', apiDevices.length);
+        console.log('👥 Users loaded:', apiUsers.length);
+        
         setDevices(apiDevices.map(convertApiDeviceToDevice));
         setUsers(apiUsers.map(convertApiUserToUser));
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load data');
+        const errorMsg = err instanceof Error ? err.message : 'Failed to load data';
+        console.error('💥 Data loading failed:', errorMsg);
+        setError(errorMsg);
         // Fallback to mock data if API is not available
+        console.log('🔄 Falling back to mock data...');
         setDevices(mockDevices);
         setUsers(mockUsersData);
       } finally {

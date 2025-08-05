@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDevices } from '../contexts/DeviceContext';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   Settings as SettingsIcon,
   Shield,
@@ -19,7 +20,7 @@ import {
 const SettingsPage: React.FC = () => {
   const { user } = useAuth();
   const { devices, users } = useDevices();
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const { theme, setTheme } = useTheme();
   const [departments, setDepartments] = useState(['IT', 'QA', 'Development', 'Marketing']);
   const [newDepartment, setNewDepartment] = useState('');
   const [exportPath, setExportPath] = useState('/shared/exports');

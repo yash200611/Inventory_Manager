@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
+import DeviceTable from '../components/DeviceTable';
 import {
   Search,
   Filter,
@@ -58,7 +59,7 @@ const DevicesPage: React.FC = () => {
   });
 
   const filteredDevices = useMemo(() => {
-    return devices.filter(device => {
+    const filtered = devices.filter(device => {
       const matchesSearch = 
         device.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         device.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -70,6 +71,13 @@ const DevicesPage: React.FC = () => {
       const matchesType = typeFilter === 'all' || device.type === typeFilter;
 
       return matchesSearch && matchesStatus && matchesType;
+    });
+
+    // Sort by most recent first (last_updated or created_at)
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.lastCheckout || a.purchaseDate).getTime();
+      const dateB = new Date(b.lastCheckout || b.purchaseDate).getTime();
+      return dateB - dateA;
     });
   }, [devices, searchTerm, statusFilter, typeFilter]);
 
@@ -163,7 +171,7 @@ const DevicesPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Device Management</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">Inventory Management</h1>
           <p className="text-gray-400">Manage and track all your testing devices</p>
         </div>
         <div className="flex items-center space-x-3">
@@ -244,83 +252,17 @@ const DevicesPage: React.FC = () => {
       {loading ? (
         <LoadingSpinner message="Loading devices..." />
       ) : (
-        /* Devices Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredDevices.map((device) => (
-          <div key={device.id} className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 hover:bg-white/10 transition-all duration-200 group">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-xl flex items-center justify-center text-cyan-400">
-                  {getDeviceIcon(device.type)}
-                </div>
-                <div>
-                  <h3 className="text-white font-bold">{device.name}</h3>
-                  <p className="text-gray-400 text-sm">{device.type}</p>
-                </div>
-              </div>
-              <div className={`px-3 py-1 rounded-full border text-xs font-medium flex items-center space-x-1 ${getStatusColor(device.status)}`}>
-                {getStatusIcon(device.status)}
-                <span>{device.status}</span>
-              </div>
-            </div>
-
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between">
-                <span className="text-gray-400 text-sm">Serial:</span>
-                <span className="text-white text-sm font-mono">{device.serialNumber}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400 text-sm">OS:</span>
-                <span className="text-white text-sm">{device.osVersion}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400 text-sm">Location:</span>
-                <span className="text-white text-sm">{device.location}</span>
-              </div>
-              {device.assignedUser && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400 text-sm">Assigned to:</span>
-                  <span className="text-purple-400 text-sm font-medium">{device.assignedUser}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center space-x-2">
-              {device.status === 'Available' ? (
-                <button
-                  onClick={() => {
-                    setSelectedDevice(device.id);
-                    setShowCheckoutModal(true);
-                  }}
-                  className="flex-1 py-2 px-3 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 hover:from-cyan-500/30 hover:to-purple-500/30 text-cyan-400 text-sm rounded-lg transition-all duration-200"
-                >
-                  Check Out
-                </button>
-              ) : device.status === 'Checked Out' ? (
-                <button
-                  onClick={() => handleCheckin(device.id)}
-                  className="flex-1 py-2 px-3 bg-gradient-to-r from-green-500/20 to-emerald-500/20 hover:from-green-500/30 hover:to-emerald-500/30 text-green-400 text-sm rounded-lg transition-all duration-200"
-                >
-                  Check In
-                </button>
-              ) : (
-                <div className="flex-1 py-2 px-3 bg-gray-500/20 text-gray-400 text-sm rounded-lg text-center">
-                  {device.status}
-                </div>
-              )}
-              
-              {user?.role === 'admin' && (
-                <button
-                  onClick={() => deleteDevice(device.id)}
-                  className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+        /* Devices Table */
+        <DeviceTable
+          devices={filteredDevices}
+          onCheckout={(deviceId) => {
+            setSelectedDevice(deviceId);
+            setShowCheckoutModal(true);
+          }}
+          onCheckin={handleCheckin}
+          onEdit={(deviceId) => {/* Handle edit */}}
+          onDelete={deleteDevice}
+        />
       )}
 
       {filteredDevices.length === 0 && !loading && (

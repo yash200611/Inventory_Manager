@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'http://localhost:5002';
 
 export interface ApiDevice {
   id: string;
@@ -35,20 +35,32 @@ export interface ApiHistory {
 class ApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    });
+    console.log('🌐 API Request:', url);
+    
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+        ...options,
+      });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Network error' }));
-      throw new Error(error.error || `HTTP ${response.status}`);
+      console.log('📡 Response status:', response.status);
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Network error' }));
+        console.error('❌ API Error:', error);
+        throw new Error(error.error || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ API Success:', data.length || 'data received');
+      return data;
+    } catch (error) {
+      console.error('🚨 Fetch Error:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   // Device endpoints
@@ -116,20 +128,49 @@ class ApiService {
 export const apiService = new ApiService();
 
 // Utility functions to convert between frontend and API types
-export const convertApiDeviceToDevice = (apiDevice: ApiDevice) => ({
-  id: apiDevice.id,
-  name: `${apiDevice.device_type} - ${apiDevice.serial_number}`,
-  type: apiDevice.device_type as any,
-  serialNumber: apiDevice.serial_number,
-  osVersion: apiDevice.os_version,
-  status: apiDevice.status as any,
-  assignedTo: apiDevice.assigned_user || undefined,
-  assignedUser: apiDevice.assigned_user || undefined,
-  lastCheckout: apiDevice.check_out_date || undefined,
-  location: 'Building A - Floor 2', // Default location since API doesn't have this
-  purchaseDate: apiDevice.created_at.split('T')[0],
-  notes: `Usage count: ${apiDevice.usage_count}`,
-});
+export const convertApiDeviceToDevice = (apiDevice: ApiDevice) => {
+  // Intelligently map device types to categories
+  const getDeviceCategory = (deviceType: string): string => {
+    const lowerType = deviceType.toLowerCase();
+    
+    // Mobile devices
+    if (lowerType.includes('iphone') || lowerType.includes('ipad')) {
+      return lowerType.includes('ipad') ? 'iPad' : 'iPhone';
+    }
+    if (lowerType.includes('galaxy') || lowerType.includes('samsung') || 
+        lowerType.includes('pixel') || lowerType.includes('google') ||
+        lowerType.includes('motorola') || lowerType.includes('oneplus') ||
+        lowerType.includes('nokia') || lowerType.includes('oppo') ||
+        lowerType.includes('redmi') || lowerType.includes('tcl') ||
+        lowerType.includes('fold') || lowerType.includes('flip')) {
+      return 'Android Phone';
+    }
+    
+    // Laptop/Desktop devices
+    if (lowerType.includes('laptop') || lowerType.includes('macbook') ||
+        lowerType.includes('desktop') || lowerType.includes('pc')) {
+      return lowerType.includes('laptop') || lowerType.includes('macbook') ? 'Laptop' : 'Desktop';
+    }
+    
+    // Default to mobile if it's a phone-like device
+    return 'Android Phone';
+  };
+
+  return {
+    id: apiDevice.id,
+    name: `${apiDevice.device_type} - ${apiDevice.serial_number || 'No Serial'}`,
+    type: getDeviceCategory(apiDevice.device_type),
+    serialNumber: apiDevice.serial_number || 'No Serial',
+    osVersion: apiDevice.os_version,
+    status: apiDevice.status as any,
+    assignedTo: apiDevice.assigned_user || undefined,
+    assignedUser: apiDevice.assigned_user || undefined,
+    lastCheckout: apiDevice.check_out_date || undefined,
+    location: 'Building A - Floor 2', // Default location since API doesn't have this
+    purchaseDate: apiDevice.created_at.split('T')[0],
+    notes: `Usage count: ${apiDevice.usage_count}`,
+  };
+};
 
 export const convertDeviceToApiDevice = (device: any): Omit<ApiDevice, 'id' | 'created_at' | 'last_updated'> => ({
   device_type: device.type,

@@ -62,6 +62,8 @@ def add_history_record(device_id, user, action):
 def get_devices():
     try:
         devices_df = pd.read_csv(DEVICES_FILE)
+        # Replace NaN with None so JSON is valid
+        devices_df = devices_df.fillna('')
         return jsonify(devices_df.to_dict('records'))
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -305,4 +307,4 @@ def get_device_history(device_id):
 
 if __name__ == '__main__':
     initialize_csv_files()
-    app.run(debug=True, host='localhost', port=5000) 
+    app.run(debug=True, host='localhost', port=5002) 

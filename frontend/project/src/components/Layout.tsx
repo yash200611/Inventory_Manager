@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   LayoutDashboard, 
   Smartphone, 
+  Laptop,
   Users, 
   Settings, 
   BarChart3, 
@@ -17,7 +18,9 @@ const Layout: React.FC = () => {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Devices', href: '/devices', icon: Smartphone },
+    { name: 'All Devices', href: '/devices', icon: Smartphone },
+    { name: 'Mobile', href: '/mobile', icon: Smartphone },
+    { name: 'Laptop', href: '/laptop', icon: Laptop },
     { name: 'Users', href: '/users', icon: Users },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Settings', href: '/settings', icon: Settings },
@@ -46,7 +49,7 @@ const Layout: React.FC = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg flex items-center justify-center">
                 <Zap className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">DeviceCore</span>
+              <span className="text-xl font-bold text-white">Inventory Manager</span>
             </div>
 
             {/* Navigation */}
